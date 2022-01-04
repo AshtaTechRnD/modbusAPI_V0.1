@@ -103,6 +103,7 @@ class startServerClass:
 			self.inExecution = 0
 			self.lc.abort()
 			self.ex_thread.terminate()
+			self.context[0x01].setValues(0x04,0x42,[0])
 			#self.lc.mode(linuxcnc.MODE_MANUAL)
 		self.machineState = self.readBusVal(0x01,0x01,1)
 		self.machineState = self.machineState[0]
@@ -115,8 +116,10 @@ class startServerClass:
 			self.homeIt = self.homeIt[0]
 			self.homeIt = self.setBit(self.homeIt)
 			if(self.homeIt == 1):
-				#self.lc.unhome(-1)
-				#self.lc.wait_complete()
+				self.lc.unhome(0)
+				self.lc.wait_complete()
+				self.lc.unhome(1)
+				self.lc.wait_complete()
 				#print("Homing")
 				self.lc.home(0)
 				self.lc.wait_complete()
@@ -179,6 +182,7 @@ class startServerClass:
             local_lc.mdi(cmd)
 	    local_lc.wait_complete()
 	    self.inExecution = 0
+	    self.context[0x01].setValues(0x04,0x42,[0])
 	    #self.ex_thread.terminate()
 	
     def evaluate(self):
@@ -195,7 +199,7 @@ class startServerClass:
 				#self.ex_thread = threading.Thread(target=self.executionThread,name='executionThrerad')
 				self.inExecution = 1
 				self.execute = 0
-				self.writeBusVal(0x01,0x05,0)
+				self.context[0x01].setValues(0x04,0x42,[1])
 				self.ex_thread = multiprocessing.Process(target=self.executionThread)
 				self.ex_thread.start()
 				#self.FeedbackVar['executeStatus'] = 1
@@ -288,7 +292,7 @@ class startServerClass:
     def intializeAddress(self):
 		di_block = ModbusSparseDataBlock({0x43:0,0x01:0,0x03:0,0x05:0,0x201:0,0x202:0,0x203:0,0x204:0})
 		ir_block = ModbusSparseDataBlock({0x41:0,0x42:0,0x500:0,0x501:0,0x502:0,0x503:0,0x504:0,0x505:0,0x506:0,0x507:0,0x508:0,0x509:0,0x510:0,0x511:0,0x512:0,0x513:0,0x514:0,0x515:0})
-		do_block = ModbusSparseDataBlock({0x02:0,0x07:0,0x601:0,0x602:0,0x603:0,0x604:0})
+		do_block = ModbusSparseDataBlock({0x02:0,0x07:0,0x08:0,0x601:0,0x602:0,0x603:0,0x604:0})
 		hr_block = ModbusSparseDataBlock({0x100:0,0x101:0,0x102:0,0x103:0,0x104:0,0x105:0,0x106:0,0x107:0,0x108:0,0x109:0, 0x110:0, 0x111:0, 0x112:0,0x113:0})
 		store = ModbusSlaveContext(di=di_block,ir=ir_block,do=do_block,hr=hr_block,zero_mode=True)
 		#store = {0x01: store}

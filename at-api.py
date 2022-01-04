@@ -115,12 +115,16 @@ class startServerClass:
 			self.homeIt = self.homeIt[0]
 			self.homeIt = self.setBit(self.homeIt)
 			if(self.homeIt == 1):
+				#self.lc.unhome(-1)
+				#self.lc.wait_complete()
+				#print("Homing")
 				self.lc.home(0)
 				self.lc.wait_complete()
 				self.lc.home(1)
 				self.lc.wait_complete()
-
-		#check Homed
+				self.homeIt = self.writeBusVal(0x01,0x43,0)
+			
+		#check homed
 		if (self.machineHomed() == 1):
 			#print("Homed")
 			self.context[0x01].setValues(0x04,0x41,[1])
@@ -282,7 +286,7 @@ class startServerClass:
         return identity
 
     def intializeAddress(self):
-		di_block = ModbusSparseDataBlock({0x01:0,0x03:0,0x05:0,0x43:0,0x201:0,0x202:0,0x203:0,0x204:0})
+		di_block = ModbusSparseDataBlock({0x43:0,0x01:0,0x03:0,0x05:0,0x201:0,0x202:0,0x203:0,0x204:0})
 		ir_block = ModbusSparseDataBlock({0x41:0,0x42:0,0x500:0,0x501:0,0x502:0,0x503:0,0x504:0,0x505:0,0x506:0,0x507:0,0x508:0,0x509:0,0x510:0,0x511:0,0x512:0,0x513:0,0x514:0,0x515:0})
 		do_block = ModbusSparseDataBlock({0x02:0,0x07:0,0x601:0,0x602:0,0x603:0,0x604:0})
 		hr_block = ModbusSparseDataBlock({0x100:0,0x101:0,0x102:0,0x103:0,0x104:0,0x105:0,0x106:0,0x107:0,0x108:0,0x109:0, 0x110:0, 0x111:0, 0x112:0,0x113:0})
@@ -340,9 +344,9 @@ class startServerClass:
 		#print("halReady")
     
     def initVariables(self):
+	        self.homeIt = [0]
 		#MachineState
 		self.machineState = [0]
-		self.homeIt = [0]
 		#Execution
 		self.execute = [0]
 		self.executionComplete = 0

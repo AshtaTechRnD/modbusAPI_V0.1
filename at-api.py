@@ -10,6 +10,7 @@ from pymodbus.payload import BinaryPayloadBuilder, BinaryPayloadDecoder, Endian
 #from twisted.internet.task import LoopingCall
 import threading
 import multiprocessing
+import ctypes
 import time
 import hal
 import linuxcnc
@@ -103,7 +104,8 @@ class startServerClass:
 			self.inExecution = 0
 			self.lc.abort()
 			self.ex_thread.terminate()
-			self.context[0x01].setValues(0x04,0x42,[0])
+			self.writeBusVal(0x01,0x05,0)
+			#self.context[0x01].setValues(0x04,0x42,[0])
 			#self.lc.mode(linuxcnc.MODE_MANUAL)
 		self.machineState = self.readBusVal(0x01,0x01,1)
 		self.machineState = self.machineState[0]
@@ -174,23 +176,32 @@ class startServerClass:
 			
 		#print(self.execute)
 		#print("readComplete")
-    def executionThread(self):
+    def executionThread(self,cc):
 	    local_lc = linuxcnc.command()
             cmd = "g01"+" X"+str(self.X_cmd)+" Y"+str(self.Y_cmd) +" F"+str(self.Speed)
             local_lc.mode(linuxcnc.MODE_MDI)
             local_lc.wait_complete()
             local_lc.mdi(cmd)
 	    local_lc.wait_complete()
+	    #cc[0x01].setValues(0x04,0x42,[0])
 	    self.inExecution = 0
-	    self.context[0x01].setValues(0x04,0x42,[0])
+	    time.sleep(5)
+	    cc.value = 0
 	    #self.ex_thread.terminate()
+    def isRunning(self):
+	    retval = 0
+	    v = hal.get_value("halui.program.is-running")
+	    if v == True:
+		    retval = 1
+	    return retval
+	    
 	
     def evaluate(self):
 		if(self.machineState == 1):
-			if ((self.execute == 1) and (self.inExecution == 0) and (self.h["mb-estop"] == 0)):
+			if ((self.execute == 1) and (self.h["mb-estop"] == 0)):
 				#cmd = "g01"+" X"+str(self.X_cmd)+" Y"+str(self.Y_cmd)+" Z"+str(self.Z_cmd)+" F"+str(self.Speed)
 				#self.execute = 0
-				#self.writeBusVal(0x01,0x05,0)
+				self.writeBusVal(0x01,0x05,0)
 				#self.lc.mode(linuxcnc.MODE_MDI)
 				#self.lc.wait_complete()
 				#self.lc.mdi(cmd)
@@ -198,13 +209,19 @@ class startServerClass:
 				#self.executionComplete = 1
 				#self.ex_thread = threading.Thread(target=self.executionThread,name='executionThrerad')
 				self.inExecution = 1
+				self.inExecutionsharedVal.value = 1
 				self.execute = 0
-				self.context[0x01].setValues(0x04,0x42,[1])
-				self.ex_thread = multiprocessing.Process(target=self.executionThread)
+				#self.context[0x01].setValues(0x04,0x42,[1])
+				self.ex_thread = multiprocessing.Process(target=self.executionThread,args=(self.inExecutionsharedVal,))
 				self.ex_thread.start()
 				#self.FeedbackVar['executeStatus'] = 1
 				#execute linuxcnc "g01 x(self.CmdVar['xCmd']) y(self.CmdVar['yCmd']) f(self.CmdVar['SpeedCmd'])"
 				
+			
+			if (self.isRunning() == 1):
+				self.context[0x01].setValues(0x04,0x42,[1])
+			else:
+				self.context[0x01].setValues(0x04,0x42,[0])
 				
 			#set speed
 			self.h["speed-cmd"] = self.Speed
@@ -348,6 +365,7 @@ class startServerClass:
 		#print("halReady")
     
     def initVariables(self):
+		self.inExecutionsharedVal = multiprocessing.Value(ctypes.c_int,0)
 	        self.homeIt = [0]
 		#MachineState
 		self.machineState = [0]

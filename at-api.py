@@ -116,10 +116,10 @@ class startServerClass:
 			self.homeIt = self.homeIt[0]
 			self.homeIt = self.setBit(self.homeIt)
 			if(self.homeIt == 1):
-				self.lc.unhome(0)
-				self.lc.wait_complete()
-				self.lc.unhome(1)
-				self.lc.wait_complete()
+				#self.lc.unhome(0)
+				#self.lc.wait_complete()
+				#self.lc.unhome(1)
+				#self.lc.wait_complete()
 				#print("Homing")
 				self.lc.home(0)
 				self.lc.wait_complete()

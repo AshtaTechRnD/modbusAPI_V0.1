@@ -166,7 +166,7 @@ class startServerClass:
         self.o3 = self.o3[0]
         self.o4 = self.o4[0]
         
-        self.output_control(self.o1)
+        #self.output_control(self.o1)
 
         #Execution
         self.execute = self.readBusVal(0x01,0x05,1)
@@ -186,11 +186,13 @@ class startServerClass:
             self.lc.wait_complete()
             self.lc.mdi("m64 p0")
             self.lc.wait_complete()
-        else:
+        elif (self.o1 == 0):
             self.lc.mode(linuxcnc.MODE_MDI)
             self.lc.wait_complete()
             self.lc.mdi("m65 p0")
             self.lc.wait_complete()
+        else:
+            pass
 
 
     def executionThread(self,cc):
@@ -277,6 +279,9 @@ class startServerClass:
             vs2 = value[1]
             self.context[0x01].setValues(0x04,0x514,[vs1])
             self.context[0x01].setValues(0x04,0x515,[vs2])
+
+            #outputControl
+            self.output_control(self.o1)
 
             #set Output halPins
             self.h["output-1"] = self.setBit(self.o1)
